@@ -44,7 +44,6 @@ Demo deploys some basic modules for school management service.
 
 ## Installation
 ```sh
-# Example commands
 git clone https://github.com/stephenhwan/Campus-Service-System.git
 cd Campus-Service-System
 # Add further installation steps here
