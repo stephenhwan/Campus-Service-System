@@ -17,6 +17,7 @@
 
   <modules>
     <!-- Sẽ bổ sung sau khi tạo module -->
+      <module>print-job-manager</module>
   </modules>
 
   <dependencyManagement>
