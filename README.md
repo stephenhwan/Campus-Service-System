@@ -1,9 +1,14 @@
 # Campus-Service-System
 Demo deploys some basic modules for school management service
+
 Print Job Manager
+
 • Submit a new print job.
+
 • Serve the next print job in queue.
+
 • Display all pending print jobs.
+
 • Search for a job by user or file name.
 
 Lost and Found Tracker
