@@ -17,7 +17,8 @@
 
   <modules>
     <!-- Sẽ bổ sung sau khi tạo module -->
-      <module>print-job-manager</module>
+    <module>print-job-manager</module>
+    <module>campus-app</module>
   </modules>
 
   <dependencyManagement>
