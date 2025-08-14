@@ -19,6 +19,7 @@
     <!-- Sẽ bổ sung sau khi tạo module -->
     <module>print-job-manager</module>
     <module>campus-app</module>
+    <module>api</module>
   </modules>
 
   <dependencyManagement>
