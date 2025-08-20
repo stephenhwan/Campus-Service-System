@@ -10,8 +10,15 @@
     </parent>
 
     <artifactId>campus-app</artifactId>
+    <packaging>jar</packaging>
 <!-- use to add more modules -->
     <dependencies>
+        <dependency>
+            <groupId>com.greenwich.university</groupId>
+            <artifactId>api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.greenwich.university</groupId>
             <artifactId>print-job-manager</artifactId>
@@ -24,5 +31,29 @@
         <maven.compiler.target>24</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <build>
+        <plugins>
 
+            <!-- Đóng gói thành 1 fat-jar để chạy ở mọi máy -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.greenwich.university.app.App</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
