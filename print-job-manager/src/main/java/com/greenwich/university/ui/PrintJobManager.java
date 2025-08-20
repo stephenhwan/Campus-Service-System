@@ -1,15 +1,19 @@
 package com.greenwich.university.ui;
 
+import com.greenwich.university.appService.PrintJobService;
 import com.greenwich.university.domain.PrintJob;
-import com.greenwich.university.repository.PrintJobQueue;
 import java.util.Scanner;
 
+/**
+ * UI Layer - Handles user interaction and presentation
+ * Depends only on Service layer
+ */
 public class PrintJobManager {
-    private PrintJobQueue printQueue;
+    private PrintJobService printJobService; // Only dependency on Service layer
     private Scanner scanner;
 
     public PrintJobManager() {
-        this.printQueue = new PrintJobQueue(100);
+        this.printJobService = new PrintJobService(); // Dependency injection point
         this.scanner = new Scanner(System.in);
     }
 
@@ -32,27 +36,20 @@ public class PrintJobManager {
 
         System.out.print("File name: ");
         String fileName = scanner.nextLine().trim();
-        if (fileName.isEmpty()) {
-            System.out.println("❌ Please enter a file name");
-            return;
-        }
 
         int pages = getValidPages();
         String priority = getValidPriority();
 
-        // ĐÃ SỬA: Constructor đơn giản với 3 tham số
-        PrintJob job = new PrintJob(fileName, pages, priority);
+        // Delegate business logic to service layer
+        String result = printJobService.submitJob(fileName, pages, priority);
 
-        if (printQueue.enqueue(job)) {
-            System.out.println("✅ Print job submitted successfully!");
-            System.out.println("Job Details:");
-            System.out.println(job.getDetailedInfo());
+        if (result.startsWith("Job submitted:")) {
+            System.out.println("✅ " + result);
         } else {
-            System.out.println("❌ Failed to submit job. Queue is full!");
+            System.out.println("❌ " + result);
         }
     }
 
-    // Đơn giản hóa: Tách logic validation
     private int getValidPages() {
         while (true) {
             System.out.print("Enter number of pages: ");
@@ -77,6 +74,7 @@ public class PrintJobManager {
                 return "NORMAL";
             }
 
+            // Use domain validation through service
             if (PrintJob.isValidPriority(priority)) {
                 return priority.toUpperCase();
             }
@@ -88,26 +86,24 @@ public class PrintJobManager {
     public void serveNextJob() {
         System.out.println("\n--- Serve Next Print Job ---");
 
-        if (printQueue.isEmpty()) {
+        // Check through service layer
+        if (printJobService.isEmpty()) {
             System.out.println("📭 No jobs in queue to serve.");
             return;
         }
 
-        PrintJob nextJob = printQueue.peek();
+        PrintJob nextJob = printJobService.getNextJob();
         System.out.println("Next job to be served:");
         System.out.println(nextJob.getDetailedInfo());
 
         if (confirmAction("Do you want to serve this job? (y/n): ")) {
-            PrintJob servedJob = printQueue.dequeue();
-            System.out.println("✅ Print job served successfully!");
-            System.out.println("Served: " + servedJob.toString());
-            System.out.println("📊 Remaining jobs in queue: " + printQueue.getSize());
+            String result = printJobService.serveNextJob();
+            System.out.println("✅ " + result);
         } else {
             System.out.println("❌ Job serving cancelled.");
         }
     }
 
-    // Đơn giản hóa: Tách logic confirmation
     private boolean confirmAction(String message) {
         System.out.print(message);
         String confirm = scanner.nextLine().trim().toLowerCase();
@@ -117,12 +113,12 @@ public class PrintJobManager {
     public void displayAllJobs() {
         System.out.println("\n--- All Pending Print Jobs ---");
 
-        if (printQueue.isEmpty()) {
+        if (printJobService.isEmpty()) {
             System.out.println("📭 No pending print jobs in queue.");
             return;
         }
 
-        PrintJob[] allJobs = printQueue.getAllJobs();
+        PrintJob[] allJobs = printJobService.getAllJobs();
         System.out.println("📊 Total jobs in queue: " + allJobs.length);
         System.out.println("----------------------------------------");
 
@@ -136,20 +132,16 @@ public class PrintJobManager {
     public void searchByFileName() {
         System.out.println("\n--- Search Jobs by File Name ---");
 
-        if (printQueue.isEmpty()) {
+        if (printJobService.isEmpty()) {
             System.out.println("📭 No jobs in queue to search.");
             return;
         }
 
         System.out.print("Enter file name to search: ");
         String filename = scanner.nextLine().trim();
-        if (filename.isEmpty()) {
-            System.out.println("❌ File name cannot be empty!");
-            return;
-        }
 
-        // Sử dụng method có sẵn từ PrintJobQueue
-        PrintJob[] matches = printQueue.searchByFileName(filename);
+        // Delegate to service layer
+        PrintJob[] matches = printJobService.searchByFileName(filename);
 
         if (matches.length > 0) {
             System.out.println("🔍 Found " + matches.length + " match(es):");
@@ -157,24 +149,23 @@ public class PrintJobManager {
                 System.out.println((i + 1) + ". " + matches[i].toString());
             }
         } else {
-            System.out.println("❌ No jobs found matching: " + filename);
+            if (filename.isEmpty()) {
+                System.out.println("❌ File name cannot be empty!");
+            } else {
+                System.out.println("❌ No jobs found matching: " + filename);
+            }
         }
     }
 
-    public void displayList() {
-        System.out.println("\n--- Queue List ---");
-        System.out.println("📊 Current jobs in queue: " + printQueue.getSize());
-        System.out.println("📦 Queue capacity: " + printQueue.getCapacity());
-        System.out.println("🆓 Available slots: " + (printQueue.getCapacity() - printQueue.getSize()));
+    public void displayQueueList() {
+        System.out.println("\n--- Queue Statistics ---");
 
-        // Hiển thị thống kê theo priority
-        var priorityCount = printQueue.getPriorityCount();
-        System.out.println("🔴 HIGH priority jobs: " + priorityCount.high);
-        System.out.println("🟡 NORMAL priority jobs: " + priorityCount.normal);
-        System.out.println("🟢 LOW priority jobs: " + priorityCount.low);
+        // Get statistics through service layer
+        String stats = printJobService.getQueueStats();
+        System.out.println("📊 " + stats);
 
-        if (!printQueue.isEmpty()) {
-            PrintJob nextJob = printQueue.peek();
+        if (!printJobService.isEmpty()) {
+            PrintJob nextJob = printJobService.getNextJob();
             System.out.println("⏭️ Next job to be served: " + nextJob.toString());
         }
     }
@@ -202,18 +193,17 @@ public class PrintJobManager {
                         searchByFileName();
                         break;
                     case 5:
-                        displayList(); // Đổi tên method
+                        displayQueueList();
                         break;
                     case 6:
                         System.out.println("👋 Thank you for using Print Job Manager System!");
                         System.out.println("Goodbye!");
-                        scanner.close(); // Đóng scanner
+                        scanner.close();
                         return;
                     default:
                         System.out.println("❌ Invalid option! Please select 1-6.");
                 }
 
-                // Pause before showing menu again
                 System.out.println("\nPress Enter to continue...");
                 scanner.nextLine();
 
