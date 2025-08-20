@@ -13,15 +13,15 @@ public class PrintJob {
     private final String fileName;
     private final int pages;
     private final String priority;
-
     private final LocalDateTime submissionTime;
 
-    public PrintJob(String fileName, int pages, String priority, LocalDateTime submissionTime) {
+    // Constructor đơn giản hóa - chỉ cần 3 tham số chính
+    public PrintJob(String fileName, int pages, String priority) {
         this.jobId = nextId++;
         this.fileName = fileName;
         this.pages = pages;
         this.priority = priority.toUpperCase();
-        this.submissionTime = LocalDateTime.now();
+        this.submissionTime = LocalDateTime.now(); // Tự động lấy thời gian hiện tại
     }
 
     // Getters
@@ -40,7 +40,6 @@ public class PrintJob {
     public String getPriority() {
         return priority;
     }
-
 
     public LocalDateTime getSubmissionTime() {
         return submissionTime;
@@ -72,11 +71,12 @@ public class PrintJob {
     @Override
     public String toString() {
         return String.format("Job#%d: %s (%d pages) - %s [%s]",
-                jobId, fileName, pages, priority);
+                jobId, fileName, pages, priority,
+                submissionTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     /**
-     * Get detailed information
+     * Get detailed information - ĐÃ SỬA LỖI
      */
     public String getDetailedInfo() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -86,7 +86,7 @@ public class PrintJob {
                         "Pages: %d\n" +
                         "Priority: %s\n" +
                         "Submitted: %s",
-                jobId, fileName, pages, priority
+                jobId, fileName, pages, priority,
                 submissionTime.format(formatter)
         );
     }
@@ -97,9 +97,4 @@ public class PrintJob {
     public boolean matchesFileName(String searchTerm) {
         return fileName.toLowerCase().contains(searchTerm.toLowerCase());
     }
-
-    /**
-     * Check if this job matches the user search criteria
-     */
-
 }
