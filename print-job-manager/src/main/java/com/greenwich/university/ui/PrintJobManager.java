@@ -1,5 +1,6 @@
 package com.greenwich.university.ui;
 
+import java.time.LocalDateTime;
 import java.util.Scanner;
 
 public class PrintJobManager {
@@ -10,6 +11,7 @@ public class PrintJobManager {
         this.printQueue = new PrintJobQueue(100);
         this.scanner = new Scanner(System.in);
     }
+
     public void displayMenu () {
         System.out.println("\n========================================");
         System.out.println("       PRINT JOB MANAGER SYSTEM       ");
@@ -17,21 +19,18 @@ public class PrintJobManager {
         System.out.println("1. Submit a new print job");
         System.out.println("2. Serve the next print job in queue");
         System.out.println("3. Display all pending print jobs");
-        System.out.println("4. Search for a job by user");
-        System.out.println("5. Search for a job by file name");
-        System.out.println("6. Display queue list");
-        System.out.println("7. Exit");
+        System.out.println("4. Search for a job by file name");
+        System.out.println("5. Display queue list");
+        System.out.println("6. Exit");
         System.out.println("========================================");
-        System.out.print("Please select an option (1-7): ");
+        System.out.print("Please select an option (1-6): ");
     }
 
     public void submitPrintJob() {
         System.out.println("\n--- Submit New Print Job ---");
 
         System.out.print("File name: ");
-
         String fileName = scanner.nextLine().trim();
-
         if (fileName.isEmpty()) {
             System.out.println("Please enter a file name");
             return;
@@ -50,18 +49,23 @@ public class PrintJobManager {
             }
         }
 
-        System.out.print("Priority (HIGHT/NORMAL/LOW): ");
-        String priority = scanner.nextLine().trim();
-        if (priority.isEmpty()) {
-            priority = "NORMAL";
+        String priority = "";
+        while (true) {
+            System.out.print("Priority (HIGH/NORMAL/LOW): ");
+            priority = scanner.nextLine().trim();
+            if (priority.isEmpty()) {
+                priority = "NORMAL";
+            }
+            if (priority.equalsIgnoreCase("HIGH") ||
+                    priority.equalsIgnoreCase("NORMAL") ||
+                    priority.equalsIgnoreCase("LOW")) {
+                break;
+            }
+            System.out.println("Invalid priority. Please enter HIGH, NORMAL, or LOW.");
         }
+        priority = priority.toUpperCase();
 
-        if (!priority.equalsIgnoreCase("HIGH") &&
-                !priority.equalsIgnoreCase("NORMAL") &&
-                !priority.equalsIgnoreCase("LOW")) {
-            System.out.print("Priority (HIGHT/NORMAL/LOW):.");
-        }
-    PrintJob job = new PrintJob(fileName, pages, priority);
+        PrintJob job = new PrintJob(fileName, pages, priority, LocalDateTime);
         if (printQueue.enqueue(job)) {
             System.out.println("✓ Print job submitted successfully!");
             System.out.println("Job Details:");
@@ -98,27 +102,28 @@ public class PrintJobManager {
             System.out.println("Job serving cancelled.");
         }
     }
-        public void displayAllJobs() {
-            System.out.println("\n--- All Pending Print Jobs ---");
 
-            if (printQueue.isEmpty()) {
-                System.out.println("No pending print jobs in queue.");
-                return;
-            }
+    public void displayAllJobs() {
+        System.out.println("\n--- All Pending Print Jobs ---");
 
-            PrintJob[] allJobs = printQueue.getAllJobs();
-            System.out.println("Total jobs in queue: " + allJobs.length);
-            System.out.println("----------------------------------------");
-
-            for (int i = 0; i < allJobs.length; i++) {
-                System.out.println((i + 1) + ". " + allJobs[i].toString());
-            }
-
-            System.out.println("----------------------------------------");
+        if (printQueue.isEmpty()) {
+            System.out.println("No pending print jobs in queue.");
+            return;
         }
 
+        PrintJob[] allJobs = printQueue.getAllJobs();
+        System.out.println("Total jobs in queue: " + allJobs.length);
+        System.out.println("----------------------------------------");
+
+        for (int i = 0; i < allJobs.length; i++) {
+            System.out.println((i + 1) + ". " + allJobs[i].toString());
+        }
+
+        System.out.println("----------------------------------------");
+    }
+
     /**
-     * Search for jobs by filename
+     * Search for jobs by filename (substring, case-insensitive)
      */
     public void searchByFileName() {
         System.out.println("\n--- Search Jobs by File Name ---");
@@ -130,12 +135,29 @@ public class PrintJobManager {
 
         System.out.print("Enter file name to search: ");
         String filename = scanner.nextLine().trim();
-
         if (filename.isEmpty()) {
             System.out.println("Error: File name cannot be empty!");
             return;
         }
 
+        String needle = filename.toLowerCase();
+        PrintJob[] allJobs = printQueue.getAllJobs();
+        boolean found = false;
+
+        for (int i = 0; i < allJobs.length; i++) {
+            if (allJobs[i].getFileName().toLowerCase().contains(needle)) {
+                if (!found) {
+                    System.out.println("Matches:");
+                    found = true;
+                }
+                System.out.println(" - " + allJobs[i].getDetailedInfo());
+            }
+        }
+
+        if (!found) {
+            System.out.println("No job matched: " + filename);
+        }
+    }
 
     /**
      * Display queue statistics
@@ -185,7 +207,7 @@ public class PrintJobManager {
                         System.out.println("Goodbye!");
                         return;
                     default:
-                        System.out.println("Invalid option! Please select 1-7.");
+                        System.out.println("Invalid option! Please select 1-6.");
                 }
 
                 // Pause before showing menu again
@@ -197,6 +219,4 @@ public class PrintJobManager {
             }
         }
     }
-
-
 }
