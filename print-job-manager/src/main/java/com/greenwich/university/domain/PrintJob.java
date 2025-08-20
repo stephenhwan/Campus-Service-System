@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
  */
 public class PrintJob {
     private static int nextId = 1;
-
     private final int jobId;
     private final String fileName;
     private final int pages;
@@ -70,7 +69,7 @@ public class PrintJob {
      */
     @Override
     public String toString() {
-        return String.format("Job#%d: %s (%d pages) - %s [%s]",
+        return String.format("Job#%d: fileName:%s Pages: (%d pages) - priority:%s [%s]",
                 jobId, fileName, pages, priority,
                 submissionTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
