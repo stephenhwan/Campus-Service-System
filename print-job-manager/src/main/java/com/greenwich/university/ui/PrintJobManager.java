@@ -18,16 +18,27 @@ public class PrintJobManager {
     }
 
     public void displayMenu() {
-        System.out.println("\n========================================");
+        System.out.println("\n=============================================");
         System.out.println("       PRINT JOB MANAGER SYSTEM       ");
-        System.out.println("========================================");
+        System.out.println("=============================================");
+        System.out.println("---------------------------------------------");
+        System.out.println("             QUEUE STATISTIC            ");
+        String stats = printJobService.getQueueStats();
+        System.out.println("📊 " + stats);
+        if (!printJobService.isEmpty()) {
+            PrintJob nextJob = printJobService.getNextJob();
+            System.out.println("⭐️ Next job to be served: " + nextJob.toString());
+        } else {
+            System.out.println("📭 No jobs in queue");
+        }
+        System.out.println("---------------------------------------------");
         System.out.println("1. Submit a new print job");
         System.out.println("2. Serve the next print job in queue");
         System.out.println("3. Display all pending print jobs");
         System.out.println("4. Search for a job by file name");
-        System.out.println("5. Display queue list");
+        System.out.println("5. Display queue statistic");
         System.out.println("6. Exit");
-        System.out.println("========================================");
+        System.out.println("=============================================");
         System.out.print("Please select an option (1-6): ");
     }
 
@@ -94,7 +105,7 @@ public class PrintJobManager {
 
         PrintJob nextJob = printJobService.getNextJob();
         System.out.println("Next job to be served:");
-        System.out.println(nextJob.getDetailedInfo());
+        System.out.println(nextJob.toString());
 
         if (confirmAction("Do you want to serve this job? (y/n): ")) {
             String result = printJobService.serveNextJob();
@@ -157,8 +168,8 @@ public class PrintJobManager {
         }
     }
 
-    public void displayQueueList() {
-        System.out.println("\n--- Queue Statistics ---");
+    public void displayQueueStatistic() {
+        System.out.println("\n--- Queue List ---");
 
         // Get statistics through service layer
         String stats = printJobService.getQueueStats();
@@ -193,7 +204,7 @@ public class PrintJobManager {
                         searchByFileName();
                         break;
                     case 5:
-                        displayQueueList();
+                        displayQueueStatistic();
                         break;
                     case 6:
                         System.out.println("👋 Thank you for using Print Job Manager System!");

@@ -2,10 +2,6 @@ package com.greenwich.university.repository;
 
 import com.greenwich.university.domain.PrintJob;
 
-/**
- * Repository layer - Custom priority queue implementation for print jobs
- * Uses array-based heap structure for priority ordering
- */
 public class PrintJobQueue {
     private PrintJob[] jobs;
     private int size;
@@ -27,10 +23,7 @@ public class PrintJobQueue {
 
         jobs[size] = job;
         size++;
-
-        // Bubble up to maintain priority order
         bubbleUp(size - 1);
-
         return true;
     }
 
@@ -43,13 +36,10 @@ public class PrintJobQueue {
         }
 
         PrintJob result = jobs[0];
-
-        // Move last element to root
         jobs[0] = jobs[size - 1];
         jobs[size - 1] = null;
         size--;
 
-        // Restore heap property
         if (size > 0) {
             bubbleDown(0);
         }
@@ -61,10 +51,7 @@ public class PrintJobQueue {
      * View the next job without removing it
      */
     public PrintJob peek() {
-        if (isEmpty()) {
-            return null;
-        }
-        return jobs[0];
+        return isEmpty() ? null : jobs[0];
     }
 
     /**
@@ -100,28 +87,33 @@ public class PrintJobQueue {
      */
     public PrintJob[] getAllJobs() {
         PrintJob[] result = new PrintJob[size];
-        for (int i = 0; i < size; i++) {
-            result[i] = jobs[i];
-        }
+        System.arraycopy(jobs, 0, result, 0, size);
         return result;
     }
 
     /**
-     * Search for jobs by file name
+     * Search for jobs by file name - SIMPLIFIED
      */
     public PrintJob[] searchByFileName(String fileName) {
-        DynamicArray matches = new DynamicArray();
-
+        // Count matches first
+        int matchCount = 0;
         for (int i = 0; i < size; i++) {
             if (jobs[i].matchesFileName(fileName)) {
-                matches.add(jobs[i]);
+                matchCount++;
             }
         }
 
-        return matches.toArray();
+        // Create result array with exact size
+        PrintJob[] matches = new PrintJob[matchCount];
+        int index = 0;
+        for (int i = 0; i < size; i++) {
+            if (jobs[i].matchesFileName(fileName)) {
+                matches[index++] = jobs[i];
+            }
+        }
+
+        return matches;
     }
-
-
 
     /**
      * Get jobs count by priority
@@ -151,7 +143,6 @@ public class PrintJobQueue {
                 break;
             }
 
-            // Swap with parent
             swap(index, parentIndex);
             index = parentIndex;
         }
@@ -205,54 +196,4 @@ public class PrintJobQueue {
         jobs[i] = jobs[j];
         jobs[j] = temp;
     }
-
-    /**
-     * Clear all jobs
-     */
-    public void clear() {
-        for (int i = 0; i < size; i++) {
-            jobs[i] = null;
-        }
-        size = 0;
-    }
 }
-
-/**
- * Custom dynamic array implementation for search results
- */
-class DynamicArray {
-    private PrintJob[] items;
-    private int size;
-    private int capacity;
-
-    public DynamicArray() {
-        this.capacity = 10;
-        this.items = new PrintJob[capacity];
-        this.size = 0;
-    }
-
-    public void add(PrintJob job) {
-        if (size >= capacity) {
-            resize();
-        }
-        items[size++] = job;
-    }
-
-    public PrintJob[] toArray() {
-        PrintJob[] result = new PrintJob[size];
-        for (int i = 0; i < size; i++) {
-            result[i] = items[i];
-        }
-        return result;
-    }
-
-    private void resize() {
-        capacity *= 2;
-        PrintJob[] newItems = new PrintJob[capacity];
-        for (int i = 0; i < size; i++) {
-            newItems[i] = items[i];
-        }
-        items = newItems;
-    }
-}
-

@@ -14,22 +14,13 @@ public class PrintJobService {
     }
 
     public String submitJob(String fileName, int pages, String priority) {
-        // Simple validation
-        if (fileName == null || fileName.trim().isEmpty()) {
-            return "File name cannot be empty";
-        }
-        if (pages <= 0) {
-            return "Pages must be greater than 0";
-        }
-        if (!PrintJob.isValidPriority(priority)) {
-            return "Invalid priority. Use HIGH, NORMAL, or LOW";
-        }
+        // Create and add job - validation moved to UI layer for better UX
+        PrintJob job = new PrintJob(fileName, pages, priority);
+
         if (printQueue.isFull()) {
             return "Queue is full";
         }
 
-        // Create and add job
-        PrintJob job = new PrintJob(fileName.trim(), pages, priority);
         if (printQueue.enqueue(job)) {
             return "Job submitted: " + job.toString();
         }

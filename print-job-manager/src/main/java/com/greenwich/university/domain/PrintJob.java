@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
  */
 public class PrintJob {
     private static int nextId = 1;
-
     private final int jobId;
     private final String fileName;
     private final int pages;
@@ -24,18 +23,6 @@ public class PrintJob {
         this.submissionTime = LocalDateTime.now(); // Tự động lấy thời gian hiện tại
     }
 
-    // Getters
-    public int getJobId() {
-        return jobId;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public int getPages() {
-        return pages;
-    }
 
     public String getPriority() {
         return priority;
@@ -70,26 +57,11 @@ public class PrintJob {
      */
     @Override
     public String toString() {
-        return String.format("Job#%d: %s (%d pages) - %s [%s]",
+        return String.format("JobID %d: fileName:%s - Pages: (%d pages) - priority:%s [%s]",
                 jobId, fileName, pages, priority,
                 submissionTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
-    /**
-     * Get detailed information - ĐÃ SỬA LỖI
-     */
-    public String getDetailedInfo() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return String.format(
-                "Job ID: %d\n" +
-                        "File Name: %s\n" +
-                        "Pages: %d\n" +
-                        "Priority: %s\n" +
-                        "Submitted: %s",
-                jobId, fileName, pages, priority,
-                submissionTime.format(formatter)
-        );
-    }
 
     /**
      * Check if this job matches the file name search criteria
