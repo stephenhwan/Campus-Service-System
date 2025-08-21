@@ -1,6 +1,5 @@
 package com.greenwich.university.ui;
 import com.greenwich.university.appService.PrintJobService;
-import com.greenwich.university.repository.PrintJobQueue.PriorityDistribution;
 import com.greenwich.university.domain.PrintJob;
 import java.util.Scanner;
 /**
@@ -8,256 +7,201 @@ import java.util.Scanner;
  * Simplified analytics without bottleneck detection and recommendations
  */
 public class PrintJobManager {
-    private PrintJobService printJobService;
+    private PrintJobService service;
     private Scanner scanner;
     public PrintJobManager() {
-        this.printJobService = new PrintJobService();
+        this.service = new PrintJobService();
         this.scanner = new Scanner(System.in);
     }
-    public void displayMenu() {
-        System.out.println("\n=============================================");
-        System.out.println("       PRINT JOB MANAGER SYSTEM       ");
-        System.out.println("=============================================");
-        System.out.println("---------------------------------------------");
-        System.out.println("             QUEUE STATISTIC            ");
-        String stats = printJobService.getBasicQueueStats();
-        System.out.println("📊 " + stats);
+    private void displayMenu() {
+        System.out.println("\n" + "=".repeat(45));
+        System.out.println("       PRINT JOB MANAGER SYSTEM");
+        System.out.println("=".repeat(45));
 
-        // Show capacity bar
+        // Quick stats
+        System.out.println("📊 " + service.getBasicStats());
         displayCapacityBar();
 
-        if (!printJobService.isEmpty()) {
-            PrintJob nextJob = printJobService.getNextJob();
-            System.out.println("⭐️ Next job: " + nextJob.toString());
+        if (!service.isEmpty()) {
+            System.out.println("⭐ Next: " + service.getNextJob().toString());
         } else {
             System.out.println("📭 No jobs in queue");
         }
-        System.out.println("---------------------------------------------");
-        System.out.println("1. Submit a new print job");
-        System.out.println("2. Serve the next print job in queue");
-        System.out.println("3. Display all pending print jobs");
-        System.out.println("4. Search for a job by file name");
-        System.out.println("5. Display advanced queue analytics");
-        System.out.println("6. Queue Health Monitor");
-        System.out.println("7. Exit");
-        System.out.println("=============================================");
-        System.out.print("Please select an option (1-7): ");
-    }
-    /**
-     * Display simple capacity progress bar
-     */
-    private void displayCapacityBar() {
-        double capacityPct = printJobService.getCapacityPercentage();
-        String bar = createProgressBar(capacityPct, 20);
-        String color = capacityPct > 80 ? "🔴" : capacityPct > 60 ? "🟡" : "🟢";
-        System.out.printf("💾 Capacity: %s %s %.1f%%\n", color, bar, capacityPct);
-    }
-    /**
-     * Create visual progress bar
-     */
-    private String createProgressBar(double percentage, int width) {
-        int filled = (int) (percentage * width / 100);
-        StringBuilder bar = new StringBuilder("[");
 
-        for (int i = 0; i < width; i++) {
-            if (i < filled) {
-                bar.append("█");
-            } else {
-                bar.append("░");
-            }
-        }
-        bar.append("]");
-        return bar.toString();
+        System.out.println("-".repeat(45));
+        System.out.println("1. Submit new job");
+        System.out.println("2. Serve next job");
+        System.out.println("3. Display all jobs");
+        System.out.println("4. Search by filename");
+        System.out.println("5. Advanced analytics");
+        System.out.println("6. Health monitor");
+        System.out.println("7. Exit");
+        System.out.println("=".repeat(45));
+        System.out.print("Select option (1-7): ");
     }
-    public void submitPrintJob() {
-        System.out.println("\n--- Submit New Print Job ---");
+
+    private void displayCapacityBar() {
+        double pct = service.getCapacityPercentage();
+        String bar = createProgressBar(pct, 20);
+        String status = pct > 80 ? "🔴" : pct > 60 ? "🟡" : "🟢";
+        System.out.printf("💾 Capacity: %s %s %.1f%%\n", status, bar, pct);
+    }
+
+    private String createProgressBar(double pct, int width) {
+        int filled = (int) (pct * width / 100);
+        StringBuilder bar = new StringBuilder("[");
+        for (int i = 0; i < width; i++) {
+            bar.append(i < filled ? "█" : "░");
+        }
+        return bar.append("]").toString();
+    }
+
+    private void submitJob() {
+        System.out.println("\n--- Submit New Job ---");
         System.out.print("File name: ");
         String fileName = scanner.nextLine().trim();
+
         int pages = getValidPages();
         String priority = getValidPriority();
-        String result = printJobService.submitJob(fileName, pages, priority);
-        if (result.startsWith("Job submitted:")) {
-            System.out.println("✅ " + result);
-        } else {
-            System.out.println("❌ " + result);
-        }
+
+        System.out.println(service.submitJob(fileName, pages, priority));
     }
+
     private int getValidPages() {
         while (true) {
-            System.out.print("Enter number of pages: ");
+            System.out.print("Pages: ");
             try {
                 int pages = Integer.parseInt(scanner.nextLine().trim());
-                if (pages > 0) {
-                    return pages;
-                }
-                System.out.println("❌ Number of pages must be greater than 0!");
+                if (pages > 0) return pages;
+                System.out.println("❌ Pages must be > 0");
             } catch (NumberFormatException e) {
-                System.out.println("❌ Please enter a valid number!");
+                System.out.println("❌ Enter valid number");
             }
         }
     }
+
     private String getValidPriority() {
         while (true) {
-            System.out.print("Priority (HIGH/NORMAL/LOW) [Default: NORMAL]: ");
+            System.out.print("Priority (HIGH/NORMAL/LOW) [NORMAL]: ");
             String priority = scanner.nextLine().trim();
-            if (priority.isEmpty()) {
-                return "NORMAL";
-            }
-            if (PrintJob.isValidPriority(priority)) {
-                return priority.toUpperCase();
-            }
-            System.out.println("❌ Invalid priority. Please enter HIGH, NORMAL, or LOW.");
+            if (priority.isEmpty()) return "NORMAL";
+            if (PrintJob.isValidPriority(priority)) return priority.toUpperCase();
+            System.out.println("❌ Invalid priority");
         }
     }
-    public void serveNextJob() {
-        System.out.println("\n--- Serve Next Print Job ---");
-        if (printJobService.isEmpty()) {
-            System.out.println("📭 No jobs in queue to serve.");
+
+    private void serveJob() {
+        System.out.println("\n--- Serve Next Job ---");
+        if (service.isEmpty()) {
+            System.out.println("📭 No jobs to serve");
             return;
         }
-        PrintJob nextJob = printJobService.getNextJob();
-        System.out.println("Next job to be served:");
-        System.out.println(nextJob.toString());
-        if (confirmAction("Do you want to serve this job? (y/n): ")) {
-            String result = printJobService.serveNextJob();
-            System.out.println("✅ " + result);
+
+        System.out.println("Next: " + service.getNextJob().toString());
+        System.out.print("Serve this job? (y/n): ");
+        if (scanner.nextLine().trim().toLowerCase().startsWith("y")) {
+            System.out.println(service.serveNextJob());
         } else {
-            System.out.println("❌ Job serving cancelled.");
+            System.out.println("❌ Cancelled");
         }
     }
-    private boolean confirmAction(String message) {
-        System.out.print(message);
-        String confirm = scanner.nextLine().trim().toLowerCase();
-        return confirm.equals("y") || confirm.equals("yes");
-    }
-    public void displayAllJobs() {
-        System.out.println("\n--- All Pending Print Jobs ---");
-        if (printJobService.isEmpty()) {
-            System.out.println("📭 No pending print jobs in queue.");
+
+    private void displayAllJobs() {
+        System.out.println("\n--- All Pending Jobs ---");
+        if (service.isEmpty()) {
+            System.out.println("📭 No pending jobs");
             return;
         }
-        PrintJob[] allJobs = printJobService.getAllJobs();
-        System.out.println("📊 Total jobs in queue: " + allJobs.length);
-        System.out.println("----------------------------------------");
-        for (int i = 0; i < allJobs.length; i++) {
-            System.out.println((i + 1) + ". " + allJobs[i].toString());
+
+        PrintJob[] jobs = service.getAllJobs();
+        System.out.println("📊 Total: " + jobs.length + " jobs");
+        System.out.println("-".repeat(40));
+        for (int i = 0; i < jobs.length; i++) {
+            System.out.println((i + 1) + ". " + jobs[i].toString());
         }
-        System.out.println("----------------------------------------");
     }
-    public void searchByFileName() {
-        System.out.println("\n--- Search Jobs by File Name ---");
-        if (printJobService.isEmpty()) {
-            System.out.println("📭 No jobs in queue to search.");
+
+    private void searchJobs() {
+        System.out.println("\n--- Search by Filename ---");
+        if (service.isEmpty()) {
+            System.out.println("📭 No jobs to search");
             return;
         }
-        System.out.print("Enter file name to search: ");
+
+        System.out.print("Filename: ");
         String filename = scanner.nextLine().trim();
-        PrintJob[] matches = printJobService.searchByFileName(filename);
+        if (filename.isEmpty()) {
+            System.out.println("❌ Filename cannot be empty");
+            return;
+        }
+
+        PrintJob[] matches = service.searchByFileName(filename);
         if (matches.length > 0) {
             System.out.println("🔍 Found " + matches.length + " match(es):");
             for (int i = 0; i < matches.length; i++) {
                 System.out.println((i + 1) + ". " + matches[i].toString());
             }
         } else {
-            if (filename.isEmpty()) {
-                System.out.println("❌ File name cannot be empty!");
-            } else {
-                System.out.println("❌ No jobs found matching: " + filename);
-            }
+            System.out.println("❌ No matches for: " + filename);
         }
     }
-    /**
-     * Display advanced queue analytics (Case 5)
-     */
-    public void displayQueueStatistic() {
-        System.out.println("\n╔══════════════════════════════════════════╗");
-        System.out.println("║          ADVANCED QUEUE ANALYTICS       ║");
-        System.out.println("╚══════════════════════════════════════════╝");
 
-        // Basic Statistics
-        String basicStats = printJobService.getBasicQueueStats();
-        System.out.println("\n📊 BASIC STATISTICS");
-        System.out.println("─".repeat(50));
-        System.out.println(basicStats);
+    private void displayStatistic() {
+        System.out.println("\n" + "╔" + "═".repeat(42) + "╗");
+        System.out.println("║         Queue Statistic           ║");
+        System.out.println("╚" + "═".repeat(42) + "╝");
 
-        // Capacity Analysis with Progress Bar
-        System.out.println("\n💾 CAPACITY ANALYSIS");
-        System.out.println("─".repeat(50));
-        double capacityPct = printJobService.getCapacityPercentage();
+        System.out.println("\n📊 BASIC STATS");
+        System.out.println("-".repeat(45));
+        System.out.println(service.getBasicStats());
+
+        System.out.println("\n💾 CAPACITY");
+        System.out.println("-".repeat(45));
+        double capacityPct = service.getCapacityPercentage();
         String capacityBar = createProgressBar(capacityPct, 30);
-        String capacityStatus = capacityPct > 80 ? "🔴 HIGH" : capacityPct > 60 ? "🟡 MEDIUM" : "🟢 LOW";
-        System.out.printf("Usage: %s %.1f%% %s\n", capacityBar, capacityPct, capacityStatus);
+        String status = capacityPct > 80 ? "🔴 HIGH" : capacityPct > 60 ? "🟡 MEDIUM" : "🟢 LOW";
+        System.out.printf("Usage: %s %.1f%% %s\n", capacityBar, capacityPct, status);
 
-        // Priority Distribution with Visual Bars
         System.out.println("\n🎯 PRIORITY DISTRIBUTION");
-        System.out.println("─".repeat(50));
-        displayPriorityDistribution();
+        System.out.println("-".repeat(45));
+        double[] dist = service.getPriorityDistribution();
+        System.out.printf("🔴 HIGH  : %s %.1f%%\n", createProgressBar(dist[0], 20), dist[0]);
+        System.out.printf("🟡 NORMAL: %s %.1f%%\n", createProgressBar(dist[1], 20), dist[1]);
+        System.out.printf("🟢 LOW   : %s %.1f%%\n", createProgressBar(dist[2], 20), dist[2]);
 
-        // Time-based Statistics
-        System.out.println("\n⏰ TIME-BASED STATISTICS");
-        System.out.println("─".repeat(50));
-        System.out.printf("Today's processed jobs: %d\n", printJobService.getTodayServedCount());
-        System.out.printf("Average waiting time: %.1f minutes\n", printJobService.getAverageWaitingTime());
+        System.out.println("\n⏰ TIME STATS");
+        System.out.println("-".repeat(45));
+        System.out.printf("Today served: %d jobs\n", service.getTodayServedCount());
+        System.out.printf("Avg wait time: %.1f minutes\n", service.getAverageWaitingTime());
 
-        if (!printJobService.isEmpty()) {
-            PrintJob nextJob = printJobService.getNextJob();
-            System.out.println("\n⏭️ NEXT JOB TO SERVE");
-            System.out.println("─".repeat(50));
-            System.out.println(nextJob.toString());
+        if (!service.isEmpty()) {
+            System.out.println("\n⏭️ NEXT JOB");
+            System.out.println("-".repeat(45));
+            System.out.println(service.getNextJob().toString());
         }
     }
 
-    /**
-     * NEW - Queue Health Monitor (Case 6) - Simplified
-     */
-    public void displayQueueHealthMonitor() {
+    private void displayHealthMonitor() {
         System.out.println("\n--- Queue Health Monitor ---");
 
-        // Health Score
-        int healthScore = printJobService.getQueueHealthScore();
-        String healthColor = getHealthColor(healthScore);
-        String healthBar = createProgressBar(healthScore, 25);
-        System.out.printf("🏥 Health Score: %s %s %d/100\n", healthColor, healthBar, healthScore);
+        int health = service.getHealthScore();
+        String healthColor = health >= 80 ? "🟢" : health >= 60 ? "🟡" : "🔴";
+        String healthBar = createProgressBar(health, 25);
+        String healthStatus = health >= 80 ? "Excellent" : health >= 60 ? "Good" : "Needs Attention";
 
-        String healthStatus = healthScore >= 80 ? "Excellent" :
-                healthScore >= 60 ? "Good" : "Needs Attention";
-        System.out.println("Status: " + healthStatus);
+        System.out.printf("🏥 Health: %s %s %d/100 (%s)\n", healthColor, healthBar, health, healthStatus);
 
-        // Quick Health Checks
-        double capacityPct = printJobService.getCapacityPercentage();
+        // Quick indicators
+        double capacityPct = service.getCapacityPercentage();
         String capacityStatus = capacityPct > 80 ? "🔴 High" : capacityPct > 60 ? "🟡 Medium" : "🟢 Low";
-        System.out.printf("💾 Capacity Usage: %.1f%% %s\n", capacityPct, capacityStatus);
+        System.out.printf("💾 Capacity: %.1f%% %s\n", capacityPct, capacityStatus);
 
-        double avgWaitTime = printJobService.getAverageWaitingTime();
-        String waitStatus = avgWaitTime > 20 ? "🔴 Long" : avgWaitTime > 10 ? "🟡 Moderate" : "🟢 Good";
-        System.out.printf("⏱️ Average Wait: %.1f min %s\n", avgWaitTime, waitStatus);
+        double waitTime = service.getAverageWaitingTime();
+        String waitStatus = waitTime > 20 ? "🔴 Long" : waitTime > 10 ? "🟡 Medium" : "🟢 Good";
+        System.out.printf("⏱️ Wait Time: %.1f min %s\n", waitTime, waitStatus);
 
-        System.out.printf("📊 Queue Size: %d jobs\n", printJobService.getAllJobs().length);
+        System.out.printf("📊 Queue Size: %d jobs\n", service.getAllJobs().length);
     }
-
-    /**
-     * Display priority distribution with visual bars
-     */
-    private void displayPriorityDistribution() {
-        PriorityDistribution dist = printJobService.getPriorityDistribution();
-
-        System.out.printf("🔴 HIGH   : %s %.1f%%\n",
-                createProgressBar(dist.highPct, 20), dist.highPct);
-        System.out.printf("🟡 NORMAL : %s %.1f%%\n",
-                createProgressBar(dist.normalPct, 20), dist.normalPct);
-        System.out.printf("🟢 LOW    : %s %.1f%%\n",
-                createProgressBar(dist.lowPct, 20), dist.lowPct);
-    }
-
-    /**
-     * Get health status color emoji
-     */
-    private String getHealthColor(int healthScore) {
-        if (healthScore >= 80) return "🟢";
-        if (healthScore >= 60) return "🟡";
-        return "🔴";
-    }
-
     public void run() {
         System.out.println("🎉 Welcome to Print Job Manager System!");
 
@@ -269,22 +213,22 @@ public class PrintJobManager {
 
                 switch (choice) {
                     case 1:
-                        submitPrintJob();
+                        submitJob();
                         break;
                     case 2:
-                        serveNextJob();
+                        serveJob();
                         break;
                     case 3:
                         displayAllJobs();
                         break;
                     case 4:
-                        searchByFileName();
+                        searchJobs();
                         break;
                     case 5:
-                        displayQueueStatistic(); // Simplified version
+                        displayStatistic(); // Simplified version
                         break;
                     case 6:
-                        displayQueueHealthMonitor();
+                        displayHealthMonitor();
                     case 7:
                         System.out.println("👋 Thank you for using Print Job Manager System!");
                         System.out.println("Goodbye!");

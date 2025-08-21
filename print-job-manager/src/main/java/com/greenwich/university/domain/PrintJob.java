@@ -3,9 +3,6 @@ package com.greenwich.university.domain;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Domain entity representing a print job
- */
 public class PrintJob {
     private static int nextId = 1;
     private final int jobId;
@@ -14,7 +11,7 @@ public class PrintJob {
     private final String priority;
     private final LocalDateTime submissionTime;
 
-    // Constructor đơn giản hóa - chỉ cần 3 tham số chính
+
     public PrintJob(String fileName, int pages, String priority) {
         this.jobId = nextId++;
         this.fileName = fileName;
@@ -32,9 +29,6 @@ public class PrintJob {
         return submissionTime;
     }
 
-    /**
-     * Get priority value for comparison (higher number = higher priority)
-     */
     public int getPriorityValue() {
         switch (priority) {
             case "HIGH": return 3;
@@ -44,17 +38,11 @@ public class PrintJob {
         }
     }
 
-    /**
-     * Check if priority is valid
-     */
     public static boolean isValidPriority(String priority) {
         String p = priority.toUpperCase();
         return p.equals("HIGH") || p.equals("NORMAL") || p.equals("LOW");
     }
 
-    /**
-     * Get basic string representation
-     */
     @Override
     public String toString() {
         return String.format("JobID %d: fileName:%s - Pages: (%d pages) - priority:%s [%s]",
@@ -62,10 +50,6 @@ public class PrintJob {
                 submissionTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
-
-    /**
-     * Check if this job matches the file name search criteria
-     */
     public boolean matchesFileName(String searchTerm) {
         return fileName.toLowerCase().contains(searchTerm.toLowerCase());
     }

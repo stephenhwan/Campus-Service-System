@@ -3,85 +3,42 @@ package com.greenwich.university.appService;
 import com.greenwich.university.domain.PrintJob;
 import com.greenwich.university.repository.PrintJobQueue;
 
-/**
- * Application Service - Orchestrates use cases, delegates to domain/repository
- */
 public class PrintJobService {
-    private PrintJobQueue printQueue;
+    private PrintJobQueue queue;
 
     public PrintJobService() {
-        this.printQueue = new PrintJobQueue(100);
+        this.queue = new PrintJobQueue(100);
     }
 
-    // ===== CORE USE CASES =====
-
     public String submitJob(String fileName, int pages, String priority) {
+        if (queue.isFull()) return "❌ Queue is full";
+
         PrintJob job = new PrintJob(fileName, pages, priority);
-
-        if (printQueue.isFull()) {
-            return "Queue is full";
-        }
-
-        if (printQueue.enqueue(job)) {
-            return "Job submitted: " + job.toString();
-        }
-        return "Failed to submit job";
+        return queue.enqueue(job) ? "✅ Job submitted: " + job.toString() : "❌ Failed to submit";
     }
 
     public String serveNextJob() {
-        if (printQueue.isEmpty()) {
-            return "No jobs to serve";
-        }
-        PrintJob job = printQueue.dequeue();
-        return "Served: " + job.toString();
+        if (queue.isEmpty()) return "❌ No jobs to serve";
+        return "✅ Served: " + queue.dequeue().toString();
     }
 
-    public PrintJob getNextJob() {
-        return printQueue.peek();
-    }
-
+    public PrintJob getNextJob() { return queue.peek(); }
     public PrintJob[] getAllJobs() {
-        return printQueue.getAllJobs();
-    }
-
-    public PrintJob[] searchByFileName(String fileName) {
-        if (fileName == null || fileName.trim().isEmpty()) {
-            return new PrintJob[0];
+        PrintJob[] result = new PrintJob[queue.getSize()];
+        // Simple copy without exposing internal array
+        for (int i = 0; i < queue.getSize(); i++) {
+            result[i] = queue.jobs[i]; // Direct access for simplicity
         }
-        return printQueue.searchByFileName(fileName.trim());
+        return result;
     }
+    public PrintJob[] searchByFileName(String fileName) { return queue.searchByFileName(fileName); }
+    public boolean isEmpty() { return queue.isEmpty(); }
 
-    public boolean isEmpty() {
-        return printQueue.isEmpty();
-    }
-
-    // ===== STATISTICS USE CASES - Delegate to repository =====
-
-    public String getBasicQueueStats() {
-        var count = printQueue.getPriorityCount();
-        return String.format("Jobs: %d/%d | HIGH: %d | NORMAL: %d | LOW: %d",
-                printQueue.getSize(), printQueue.getCapacity(),
-                count.high, count.normal, count.low);
-    }
-
-    public double getCapacityPercentage() {
-        return printQueue.getCapacityPercentage();
-    }
-
-    public PrintJobQueue.PriorityDistribution getPriorityDistribution() {
-        return printQueue.getPriorityDistribution();
-    }
-
-    public double getAverageWaitingTime() {
-        return printQueue.getAverageWaitingTime();
-    }
-
-    public int getTodayServedCount() {
-        return printQueue.getTodayServedCount();
-    }
-
-    // Simplified - removed bottleneck detection and recommendations
-    public int getQueueHealthScore() {
-        return printQueue.calculateHealthScore();
-    }
+    // Analytics delegation
+    public String getBasicStats() { return queue.getStats(); }
+    public double getCapacityPercentage() { return queue.getCapacityPercentage(); }
+    public double[] getPriorityDistribution() { return queue.getPriorityDistribution(); }
+    public double getAverageWaitingTime() { return queue.getAverageWaitingTime(); }
+    public int getTodayServedCount() { return queue.getTodayServedCount(); }
+    public int getHealthScore() { return queue.getHealthScore(); }
 }

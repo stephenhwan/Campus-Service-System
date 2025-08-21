@@ -1,337 +1,151 @@
 package com.greenwich.university.repository;
 
 import com.greenwich.university.domain.PrintJob;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class PrintJobQueue {
-    private PrintJob[] jobs;
+    public PrintJob[] jobs;
     private int size;
-    private int capacity;
-
-    // Analytics data - managed at repository level
-    private PrintJob[] servedJobs;
-    private int servedJobsSize;
-    private int servedJobsCapacity;
+    private final int capacity;
+    private int servedToday = 0;
 
     public PrintJobQueue(int capacity) {
         this.capacity = capacity;
         this.jobs = new PrintJob[capacity];
         this.size = 0;
-
-        // Initialize served jobs tracking
-        this.servedJobsCapacity = 1000;
-        this.servedJobs = new PrintJob[servedJobsCapacity];
-        this.servedJobsSize = 0;
     }
 
-    // ===== CORE QUEUE OPERATIONS =====
-
-    /**
-     * Add a job to the queue (priority-based insertion)
-     */
+    // Core operations
     public boolean enqueue(PrintJob job) {
-        if (size >= capacity) {
-            return false;
-        }
-
-        jobs[size] = job;
-        size++;
+        if (size >= capacity) return false;
+        jobs[size++] = job;
         bubbleUp(size - 1);
         return true;
     }
 
-    /**
-     * Remove and return the highest priority job
-     */
     public PrintJob dequeue() {
-        if (isEmpty()) {
-            return null;
-        }
-
+        if (isEmpty()) return null;
         PrintJob result = jobs[0];
-
-        // Track served job at repository level
-        trackServedJob(result);
-
-        jobs[0] = jobs[size - 1];
-        jobs[size - 1] = null;
-        size--;
-
-        if (size > 0) {
-            bubbleDown(0);
-        }
-
+        servedToday++;
+        jobs[0] = jobs[--size];
+        if (size > 0) bubbleDown(0);
         return result;
     }
 
-    /**
-     * Track served job - Repository responsibility
-     */
-    private void trackServedJob(PrintJob job) {
-        if (servedJobsSize < servedJobsCapacity) {
-            servedJobs[servedJobsSize] = job;
-            servedJobsSize++;
-        } else {
-            // Sliding window - remove oldest
-            for (int i = 0; i < servedJobsCapacity - 1; i++) {
-                servedJobs[i] = servedJobs[i + 1];
-            }
-            servedJobs[servedJobsCapacity - 1] = job;
-        }
-    }
+    public PrintJob peek() { return isEmpty() ? null : jobs[0]; }
+    public boolean isEmpty() { return size == 0; }
+    public boolean isFull() { return size >= capacity; }
+    public int getSize() { return size; }
+    public int getCapacity() { return capacity; }
 
-    /**
-     * View the next job without removing it
-     */
-    public PrintJob peek() {
-        return isEmpty() ? null : jobs[0];
-    }
-
-    /**
-     * Check if queue is empty
-     */
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
-    /**
-     * Check if queue is full
-     */
-    public boolean isFull() {
-        return size >= capacity;
-    }
-
-    /**
-     * Get current size
-     */
-    public int getSize() {
-        return size;
-    }
-
-    /**
-     * Get capacity
-     */
-    public int getCapacity() {
-        return capacity;
-    }
-
-    /**
-     * Get all jobs in current order (for display purposes)
-     */
-    public PrintJob[] getAllJobs() {
-        PrintJob[] result = new PrintJob[size];
-        System.arraycopy(jobs, 0, result, 0, size);
-        return result;
-    }
-
-    /**
-     * Search for jobs by file name
-     */
+    // Search functionality
     public PrintJob[] searchByFileName(String fileName) {
-        // Count matches first
-        int matchCount = 0;
+        PrintJob[] temp = new PrintJob[size];
+        int count = 0;
         for (int i = 0; i < size; i++) {
             if (jobs[i].matchesFileName(fileName)) {
-                matchCount++;
+                temp[count++] = jobs[i];
             }
         }
-
-        // Create result array with exact size
-        PrintJob[] matches = new PrintJob[matchCount];
-        int index = 0;
-        for (int i = 0; i < size; i++) {
-            if (jobs[i].matchesFileName(fileName)) {
-                matches[index++] = jobs[i];
-            }
-        }
-
-        return matches;
+        PrintJob[] result = new PrintJob[count];
+        System.arraycopy(temp, 0, result, 0, count);
+        return result;
     }
 
-    /**
-     * Get jobs count by priority
-     */
-    public PriorityCount getPriorityCount() {
-        int highCount = 0, normalCount = 0, lowCount = 0;
-
-        for (int i = 0; i < size; i++) {
-            switch (jobs[i].getPriority()) {
-                case "HIGH": highCount++; break;
-                case "NORMAL": normalCount++; break;
-                case "LOW": lowCount++; break;
-            }
-        }
-
-        return new PriorityCount(highCount, normalCount, lowCount);
+    // Analytics - simplified
+    public String getStats() {
+        int[] counts = getPriorityCounts();
+        return String.format("Jobs: %d/%d | HIGH:%d NORMAL:%d LOW:%d",
+                size, capacity, counts[0], counts[1], counts[2]);
     }
 
-    // ===== ANALYTICS METHODS - Repository Level =====
-
-    /**
-     * Get capacity usage percentage
-     */
     public double getCapacityPercentage() {
         return (double) size / capacity * 100;
     }
 
-    /**
-     * Get priority distribution percentages
-     */
-    public PriorityDistribution getPriorityDistribution() {
-        PriorityCount count = getPriorityCount();
-        int total = size;
-
-        if (total == 0) {
-            return new PriorityDistribution(0, 0, 0);
-        }
-
-        double highPct = (double) count.high / total * 100;
-        double normalPct = (double) count.normal / total * 100;
-        double lowPct = (double) count.low / total * 100;
-
-        return new PriorityDistribution(highPct, normalPct, lowPct);
+    public double[] getPriorityDistribution() {
+        if (size == 0) return new double[]{0, 0, 0};
+        int[] counts = getPriorityCounts();
+        return new double[]{
+                counts[0] * 100.0 / size,
+                counts[1] * 100.0 / size,
+                counts[2] * 100.0 / size
+        };
     }
 
-    /**
-     * Get today's served jobs count
-     */
-    public int getTodayServedCount() {
-        LocalDate today = LocalDate.now();
-        int count = 0;
-
-        for (int i = 0; i < servedJobsSize; i++) {
-            if (servedJobs[i] != null &&
-                    servedJobs[i].getSubmissionTime().toLocalDate().equals(today)) {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    /**
-     * Get average waiting time for current jobs (in minutes)
-     */
     public double getAverageWaitingTime() {
         if (isEmpty()) return 0;
-
         LocalDateTime now = LocalDateTime.now();
-        double totalMinutes = 0;
-
+        long totalMinutes = 0;
         for (int i = 0; i < size; i++) {
-            long minutes = java.time.Duration.between(jobs[i].getSubmissionTime(), now).toMinutes();
-            totalMinutes += minutes;
+            totalMinutes += java.time.Duration.between(jobs[i].getSubmissionTime(), now).toMinutes();
         }
-
-        return totalMinutes / size;
+        return (double) totalMinutes / size;
     }
 
-    /**
-     * Calculate simple health score based on queue metrics
-     */
-    public int calculateHealthScore() {
-        double capacityPct = getCapacityPercentage();
-        double avgWaitTime = getAverageWaitingTime();
-        PriorityDistribution dist = getPriorityDistribution();
+    public int getTodayServedCount() { return servedToday; }
 
+    public int getHealthScore() {
         int score = 100;
+        double capacity = getCapacityPercentage();
+        double waitTime = getAverageWaitingTime();
 
-        // Capacity penalty
-        if (capacityPct > 90) score -= 30;
-        else if (capacityPct > 70) score -= 15;
+        if (capacity > 90) score -= 30;
+        else if (capacity > 70) score -= 15;
 
-        // Wait time penalty
-        if (avgWaitTime > 60) score -= 25;
-        else if (avgWaitTime > 30) score -= 10;
+        if (waitTime > 60) score -= 25;
+        else if (waitTime > 30) score -= 10;
 
-        // Priority imbalance penalty
-        if (dist.highPct > 60) score -= 15;
+        double[] dist = getPriorityDistribution();
+        if (dist[0] > 60) score -= 15; // too many HIGH priority
 
         return Math.max(0, score);
     }
 
-    // ===== HEAP OPERATIONS =====
+    private int[] getPriorityCounts() {
+        int[] counts = {0, 0, 0}; // HIGH, NORMAL, LOW
+        for (int i = 0; i < size; i++) {
+            switch (jobs[i].getPriority()) {
+                case "HIGH": counts[0]++; break;
+                case "NORMAL": counts[1]++; break;
+                case "LOW": counts[2]++; break;
+            }
+        }
+        return counts;
+    }
 
-    /**
-     * Bubble up element to maintain heap property
-     */
     private void bubbleUp(int index) {
         while (index > 0) {
-            int parentIndex = (index - 1) / 2;
-
-            if (compareJobs(jobs[index], jobs[parentIndex]) <= 0) {
-                break;
-            }
-
-            swap(index, parentIndex);
-            index = parentIndex;
+            int parent = (index - 1) / 2;
+            if (compareJobs(jobs[index], jobs[parent]) <= 0) break;
+            swap(index, parent);
+            index = parent;
         }
     }
 
-    /**
-     * Bubble down element to maintain heap property
-     */
     private void bubbleDown(int index) {
         while (true) {
-            int leftChild = 2 * index + 1;
-            int rightChild = 2 * index + 2;
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
             int largest = index;
 
-            if (leftChild < size && compareJobs(jobs[leftChild], jobs[largest]) > 0) {
-                largest = leftChild;
-            }
-
-            if (rightChild < size && compareJobs(jobs[rightChild], jobs[largest]) > 0) {
-                largest = rightChild;
-            }
-
-            if (largest == index) {
-                break;
-            }
+            if (left < size && compareJobs(jobs[left], jobs[largest]) > 0) largest = left;
+            if (right < size && compareJobs(jobs[right], jobs[largest]) > 0) largest = right;
+            if (largest == index) break;
 
             swap(index, largest);
             index = largest;
         }
     }
 
-    /**
-     * Compare two jobs (positive if job1 has higher priority than job2)
-     */
-    private int compareJobs(PrintJob job1, PrintJob job2) {
-        // First compare by priority
-        int priorityDiff = job1.getPriorityValue() - job2.getPriorityValue();
-        if (priorityDiff != 0) {
-            return priorityDiff;
-        }
-
-        // If same priority, earlier submission time has higher priority
-        return job2.getSubmissionTime().compareTo(job1.getSubmissionTime());
+    private int compareJobs(PrintJob j1, PrintJob j2) {
+        int diff = j1.getPriorityValue() - j2.getPriorityValue();
+        return diff != 0 ? diff : j2.getSubmissionTime().compareTo(j1.getSubmissionTime());
     }
 
-    /**
-     * Swap two elements in the array
-     */
     private void swap(int i, int j) {
         PrintJob temp = jobs[i];
         jobs[i] = jobs[j];
         jobs[j] = temp;
-    }
-
-    // ===== VALUE OBJECTS =====
-
-    /**
-     * Priority distribution percentages
-     */
-    public static class PriorityDistribution {
-        public final double highPct;
-        public final double normalPct;
-        public final double lowPct;
-
-        public PriorityDistribution(double highPct, double normalPct, double lowPct) {
-            this.highPct = highPct;
-            this.normalPct = normalPct;
-            this.lowPct = lowPct;
-        }
     }
 }
