@@ -1,17 +1,31 @@
 package com.greenwich.university.repository;
 
 import com.greenwich.university.domain.PrintJob;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class PrintJobQueue {
     private PrintJob[] jobs;
     private int size;
     private int capacity;
 
+    // Analytics data - managed at repository level
+    private PrintJob[] servedJobs;
+    private int servedJobsSize;
+    private int servedJobsCapacity;
+
     public PrintJobQueue(int capacity) {
         this.capacity = capacity;
         this.jobs = new PrintJob[capacity];
         this.size = 0;
+
+        // Initialize served jobs tracking
+        this.servedJobsCapacity = 1000;
+        this.servedJobs = new PrintJob[servedJobsCapacity];
+        this.servedJobsSize = 0;
     }
+
+    // ===== CORE QUEUE OPERATIONS =====
 
     /**
      * Add a job to the queue (priority-based insertion)
@@ -36,6 +50,10 @@ public class PrintJobQueue {
         }
 
         PrintJob result = jobs[0];
+
+        // Track served job at repository level
+        trackServedJob(result);
+
         jobs[0] = jobs[size - 1];
         jobs[size - 1] = null;
         size--;
@@ -45,6 +63,22 @@ public class PrintJobQueue {
         }
 
         return result;
+    }
+
+    /**
+     * Track served job - Repository responsibility
+     */
+    private void trackServedJob(PrintJob job) {
+        if (servedJobsSize < servedJobsCapacity) {
+            servedJobs[servedJobsSize] = job;
+            servedJobsSize++;
+        } else {
+            // Sliding window - remove oldest
+            for (int i = 0; i < servedJobsCapacity - 1; i++) {
+                servedJobs[i] = servedJobs[i + 1];
+            }
+            servedJobs[servedJobsCapacity - 1] = job;
+        }
     }
 
     /**
@@ -92,7 +126,7 @@ public class PrintJobQueue {
     }
 
     /**
-     * Search for jobs by file name - SIMPLIFIED
+     * Search for jobs by file name
      */
     public PrintJob[] searchByFileName(String fileName) {
         // Count matches first
@@ -131,6 +165,93 @@ public class PrintJobQueue {
 
         return new PriorityCount(highCount, normalCount, lowCount);
     }
+
+    // ===== ANALYTICS METHODS - Repository Level =====
+
+    /**
+     * Get capacity usage percentage
+     */
+    public double getCapacityPercentage() {
+        return (double) size / capacity * 100;
+    }
+
+    /**
+     * Get priority distribution percentages
+     */
+    public PriorityDistribution getPriorityDistribution() {
+        PriorityCount count = getPriorityCount();
+        int total = size;
+
+        if (total == 0) {
+            return new PriorityDistribution(0, 0, 0);
+        }
+
+        double highPct = (double) count.high / total * 100;
+        double normalPct = (double) count.normal / total * 100;
+        double lowPct = (double) count.low / total * 100;
+
+        return new PriorityDistribution(highPct, normalPct, lowPct);
+    }
+
+    /**
+     * Get today's served jobs count
+     */
+    public int getTodayServedCount() {
+        LocalDate today = LocalDate.now();
+        int count = 0;
+
+        for (int i = 0; i < servedJobsSize; i++) {
+            if (servedJobs[i] != null &&
+                    servedJobs[i].getSubmissionTime().toLocalDate().equals(today)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Get average waiting time for current jobs (in minutes)
+     */
+    public double getAverageWaitingTime() {
+        if (isEmpty()) return 0;
+
+        LocalDateTime now = LocalDateTime.now();
+        double totalMinutes = 0;
+
+        for (int i = 0; i < size; i++) {
+            long minutes = java.time.Duration.between(jobs[i].getSubmissionTime(), now).toMinutes();
+            totalMinutes += minutes;
+        }
+
+        return totalMinutes / size;
+    }
+
+    /**
+     * Calculate simple health score based on queue metrics
+     */
+    public int calculateHealthScore() {
+        double capacityPct = getCapacityPercentage();
+        double avgWaitTime = getAverageWaitingTime();
+        PriorityDistribution dist = getPriorityDistribution();
+
+        int score = 100;
+
+        // Capacity penalty
+        if (capacityPct > 90) score -= 30;
+        else if (capacityPct > 70) score -= 15;
+
+        // Wait time penalty
+        if (avgWaitTime > 60) score -= 25;
+        else if (avgWaitTime > 30) score -= 10;
+
+        // Priority imbalance penalty
+        if (dist.highPct > 60) score -= 15;
+
+        return Math.max(0, score);
+    }
+
+    // ===== HEAP OPERATIONS =====
 
     /**
      * Bubble up element to maintain heap property
@@ -195,5 +316,22 @@ public class PrintJobQueue {
         PrintJob temp = jobs[i];
         jobs[i] = jobs[j];
         jobs[j] = temp;
+    }
+
+    // ===== VALUE OBJECTS =====
+
+    /**
+     * Priority distribution percentages
+     */
+    public static class PriorityDistribution {
+        public final double highPct;
+        public final double normalPct;
+        public final double lowPct;
+
+        public PriorityDistribution(double highPct, double normalPct, double lowPct) {
+            this.highPct = highPct;
+            this.normalPct = normalPct;
+            this.lowPct = lowPct;
+        }
     }
 }

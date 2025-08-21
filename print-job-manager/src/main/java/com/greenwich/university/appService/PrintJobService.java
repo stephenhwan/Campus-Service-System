@@ -4,7 +4,7 @@ import com.greenwich.university.domain.PrintJob;
 import com.greenwich.university.repository.PrintJobQueue;
 
 /**
- * Application Service - Business logic for print job operations
+ * Application Service - Orchestrates use cases, delegates to domain/repository
  */
 public class PrintJobService {
     private PrintJobQueue printQueue;
@@ -13,8 +13,9 @@ public class PrintJobService {
         this.printQueue = new PrintJobQueue(100);
     }
 
+    // ===== CORE USE CASES =====
+
     public String submitJob(String fileName, int pages, String priority) {
-        // Create and add job - validation moved to UI layer for better UX
         PrintJob job = new PrintJob(fileName, pages, priority);
 
         if (printQueue.isFull()) {
@@ -50,14 +51,37 @@ public class PrintJobService {
         return printQueue.searchByFileName(fileName.trim());
     }
 
-    public String getQueueStats() {
+    public boolean isEmpty() {
+        return printQueue.isEmpty();
+    }
+
+    // ===== STATISTICS USE CASES - Delegate to repository =====
+
+    public String getBasicQueueStats() {
         var count = printQueue.getPriorityCount();
         return String.format("Jobs: %d/%d | HIGH: %d | NORMAL: %d | LOW: %d",
                 printQueue.getSize(), printQueue.getCapacity(),
                 count.high, count.normal, count.low);
     }
 
-    public boolean isEmpty() {
-        return printQueue.isEmpty();
+    public double getCapacityPercentage() {
+        return printQueue.getCapacityPercentage();
+    }
+
+    public PrintJobQueue.PriorityDistribution getPriorityDistribution() {
+        return printQueue.getPriorityDistribution();
+    }
+
+    public double getAverageWaitingTime() {
+        return printQueue.getAverageWaitingTime();
+    }
+
+    public int getTodayServedCount() {
+        return printQueue.getTodayServedCount();
+    }
+
+    // Simplified - removed bottleneck detection and recommendations
+    public int getQueueHealthScore() {
+        return printQueue.calculateHealthScore();
     }
 }
