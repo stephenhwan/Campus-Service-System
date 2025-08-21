@@ -1,10 +1,10 @@
-package com.greenwich.university;
+
 // Importing classes from java.time package to handle dates and times
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-// The com.greenwich.university.Booking class represents a single room booking
+// The Booking class represents a single room booking
 public class Booking {
     // Unique identifier for each booking
     int id;
@@ -38,9 +38,9 @@ public class Booking {
     @Override
     public String toString() {
         return String.format("#%d | Room %s | %s %s-%s | By: %s",
-                id,                // com.greenwich.university.Booking ID
+                id,                // Booking ID
                 room,              // Room name/number
-                date,              // com.greenwich.university.Booking date
+                date,              // Booking date
                 start,             // Starting time
                 end,               // Ending time
                 (bookedBy == null ? "-" : bookedBy)); // Show "-" if bookedBy is null

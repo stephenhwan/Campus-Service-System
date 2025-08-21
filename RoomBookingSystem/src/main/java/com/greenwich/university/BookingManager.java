@@ -1,14 +1,13 @@
-package com.greenwich.university;
-// Import classes to represent dates and times
 
+// Import classes to represent dates and times
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-// com.greenwich.university.BookingManager class controls all logic related to managing bookings
+// BookingManager class controls all logic related to managing bookings
 public class BookingManager {
 
     // ---------- DynamicArray (custom implementation, no Java Collections) ----------
-    // Custom dynamic array to store com.greenwich.university.Booking objects
+    // Custom dynamic array to store Booking objects
     private static class DynamicArray {
         // Internal storage array, initially size 8
         private Booking[] data = new Booking[8];
@@ -135,7 +134,7 @@ public class BookingManager {
 
     /**
      * Add booking if available (no overlap in same room and date).
-     * Returns the created com.greenwich.university.Booking or null if conflict.
+     * Returns the created Booking or null if conflict.
      */
     public Booking add(String room, LocalDate date, LocalTime start, LocalTime end, String by) {
         if (!start.isBefore(end)) throw new IllegalArgumentException("Start must be before end.");
@@ -171,7 +170,7 @@ public class BookingManager {
                 return true;
             }
         }
-        return false;   // com.greenwich.university.Booking not found
+        return false;   // Booking not found
     }
 
     /** Return an array of bookings sorted by date and time. */

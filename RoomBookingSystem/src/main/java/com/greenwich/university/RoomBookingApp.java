@@ -1,12 +1,10 @@
-package com.greenwich.university;
-
 // Import classes to handle dates, times, formatting, and user input
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
-// com.greenwich.university.RoomBookingApp is the main console application (UI) for the Room com.greenwich.university.Booking System
+// RoomBookingApp is the main console application (UI) for the Room Booking System
 public class RoomBookingApp {
 
     // Formatter for parsing and displaying times in "hour:minute" format (24h clock)
@@ -58,7 +56,7 @@ public class RoomBookingApp {
         LocalTime end = LocalTime.parse(ask("End (H:MM, 24h): "), TF);     // Get end time
         String by = ask("Booked by (name): ");                    // Get booker's name
 
-        // Try to add booking via com.greenwich.university.BookingManager
+        // Try to add booking via BookingManager
         Booking b = mgr.add(room, date, start, end, by);
         // Print result (success or conflict)
         System.out.println(b == null ? "Slot NOT available." : ("Added: " + b));
@@ -77,9 +75,9 @@ public class RoomBookingApp {
 
     // Handle "Cancel booking" option
     private static void onCancel(BookingManager mgr) {
-        int id = Integer.parseInt(ask("com.greenwich.university.Booking ID to cancel: ")); // Get ID to cancel
-        // Try to cancel via com.greenwich.university.BookingManager and print result
-        System.out.println(mgr.cancel(id) ? "Cancelled." : "com.greenwich.university.Booking not found.");
+        int id = Integer.parseInt(ask("Booking ID to cancel: ")); // Get ID to cancel
+        // Try to cancel via BookingManager and print result
+        System.out.println(mgr.cancel(id) ? "Cancelled." : "Booking not found.");
     }
 
     // Handle "Display all bookings" option
