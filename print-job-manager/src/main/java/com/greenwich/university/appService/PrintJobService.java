@@ -34,11 +34,17 @@ public class PrintJobService {
     public PrintJob[] searchByFileName(String fileName) { return queue.searchByFileName(fileName); }
     public boolean isEmpty() { return queue.isEmpty(); }
 
-    // Analytics delegation
-    public String getBasicStats() { return queue.getStats(); }
-    public double getCapacityPercentage() { return queue.getCapacityPercentage(); }
-    public double[] getPriorityDistribution() { return queue.getPriorityDistribution(); }
-    public double getAverageWaitingTime() { return queue.getAverageWaitingTime(); }
-    public int getTodayServedCount() { return queue.getTodayServedCount(); }
-    public int getHealthScore() { return queue.getHealthScore(); }
+
+    public String getBasicStats()
+    { return queue.getStats();}
+    public double getCapacityPercentage()
+    { return queue.getCapacityPercentage(); }
+    public double[] getPriorityDistribution()
+    { return queue.getPriorityDistribution(); }
+    public double getAverageWaitingTime()
+    { return queue.getAverageWaitingTime(); }
+    public int getTodayServedCount()
+    { return queue.getTodayServedCount(); }
+    public int getHealthScore()
+    { return queue.getHealthScore(); }
 }

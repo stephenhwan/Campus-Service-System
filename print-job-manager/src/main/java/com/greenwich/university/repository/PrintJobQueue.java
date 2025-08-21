@@ -36,7 +36,7 @@ public class PrintJobQueue {
     public boolean isEmpty() { return size == 0; }
     public boolean isFull() { return size >= capacity; }
     public int getSize() { return size; }
-    public int getCapacity() { return capacity; }
+
 
     // Search functionality
     public PrintJob[] searchByFileName(String fileName) {
