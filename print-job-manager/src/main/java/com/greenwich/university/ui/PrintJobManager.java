@@ -105,7 +105,7 @@ public class PrintJobManager {
 
         PrintJob nextJob = printJobService.getNextJob();
         System.out.println("Next job to be served:");
-        System.out.println(nextJob.getDetailedInfo());
+        System.out.println(nextJob.toString());
 
         if (confirmAction("Do you want to serve this job? (y/n): ")) {
             String result = printJobService.serveNextJob();
