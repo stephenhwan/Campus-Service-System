@@ -33,7 +33,7 @@ public class PrintJobManager {
         System.out.println("2. Serve next job");
         System.out.println("3. Display all jobs");
         System.out.println("4. Search by filename");
-        System.out.println("5. Advanced analytics");
+        System.out.println("5. Display Queue Statistic");
         System.out.println("6. Health monitor");
         System.out.println("7. Exit");
         System.out.println("=".repeat(45));
