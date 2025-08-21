@@ -20,6 +20,7 @@
     <module>print-job-manager</module>
     <module>campus-app</module>
     <module>api</module>
+      <module>Digital Library System</module>
   </modules>
 
   <dependencyManagement>
