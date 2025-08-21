@@ -1,8 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <!-- Parent = your root project -->
     <parent>
         <groupId>com.greenwich.university</groupId>
         <artifactId>university-system</artifactId>
@@ -11,49 +13,13 @@
 
     <artifactId>campus-app</artifactId>
     <packaging>jar</packaging>
-<!-- use to add more modules -->
+
     <dependencies>
+        <!-- Dependency to API module (which contains both CourseRegistration and PrintJobManager) -->
         <dependency>
             <groupId>com.greenwich.university</groupId>
             <artifactId>api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.greenwich.university</groupId>
-            <artifactId>print-job-manager</artifactId>
-            <version>${project.version}</version>
+            <version>0.1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
-
-    <properties>
-        <maven.compiler.source>24</maven.compiler.source>
-        <maven.compiler.target>24</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-    <build>
-        <plugins>
-
-            <!-- Đóng gói thành 1 fat-jar để chạy ở mọi máy -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals><goal>shade</goal></goals>
-                        <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.greenwich.university.app.App</mainClass>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

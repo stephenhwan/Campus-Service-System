@@ -10,7 +10,7 @@ public class PrintJob {
     private final int pages;
     private final String priority;
     private final LocalDateTime submissionTime;
-
+    private LocalDateTime dequeueTime;
 
     public PrintJob(String fileName, int pages, String priority) {
         this.jobId = nextId++;
@@ -18,6 +18,7 @@ public class PrintJob {
         this.pages = pages;
         this.priority = priority.toUpperCase();
         this.submissionTime = LocalDateTime.now(); // Tự động lấy thời gian hiện tại
+        this.dequeueTime = null;
     }
 
 
@@ -28,7 +29,8 @@ public class PrintJob {
     public LocalDateTime getSubmissionTime() {
         return submissionTime;
     }
-
+    public LocalDateTime getDequeueTime() { return dequeueTime; }
+    public void setDequeueTime(LocalDateTime time) {this.dequeueTime = time;}
     public int getPriorityValue() {
         switch (priority) {
             case "HIGH": return 3;

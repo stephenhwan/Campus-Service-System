@@ -43,7 +43,7 @@ Demo deploys some basic modules for school management service.
 - Display all bookings sorted by date or time.
 
 ## Installation
-```sh
-git clone https://github.com/stephenhwan/Campus-Service-System.git
-cd Campus-Service-System
-# Add further installation steps here
+```bash
+git clone https://github.com/jerry903-pham/Campus_Service_System.git
+cd Campus_Service_System
+

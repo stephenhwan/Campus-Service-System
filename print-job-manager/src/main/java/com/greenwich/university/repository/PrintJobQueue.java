@@ -2,17 +2,22 @@ package com.greenwich.university.repository;
 
 import com.greenwich.university.domain.PrintJob;
 import java.time.LocalDateTime;
+import java.time.Duration;
 
 public class PrintJobQueue {
     public PrintJob[] jobs;
     private int size;
     private final int capacity;
     private int servedToday = 0;
+    private PrintJob[] historyJobs;
+    private int historySize = 0;
 
     public PrintJobQueue(int capacity) {
         this.capacity = capacity;
         this.jobs = new PrintJob[capacity];
         this.size = 0;
+        this.historyJobs = new PrintJob[capacity * 10];
+        this.historySize = 0;
     }
 
     // Core operations
@@ -29,6 +34,19 @@ public class PrintJobQueue {
         servedToday++;
         jobs[0] = jobs[--size];
         if (size > 0) bubbleDown(0);
+
+        // Set dequeue time
+        result.setDequeueTime(LocalDateTime.now());
+
+        // Add to history for statistics - THIS WAS MISSING!
+        if (historySize < historyJobs.length) {
+            historyJobs[historySize++] = result;
+        } else {
+            // Shift array left to make room (simple implementation)
+            System.arraycopy(historyJobs, 1, historyJobs, 0, historyJobs.length - 1);
+            historyJobs[historyJobs.length - 1] = result;
+        }
+
         return result;
     }
 
@@ -36,7 +54,6 @@ public class PrintJobQueue {
     public boolean isEmpty() { return size == 0; }
     public boolean isFull() { return size >= capacity; }
     public int getSize() { return size; }
-
 
     // Search functionality
     public PrintJob[] searchByFileName(String fileName) {
@@ -52,7 +69,7 @@ public class PrintJobQueue {
         return result;
     }
 
-    // Analytics - simplified
+
     public String getStats() {
         int[] counts = getPriorityCounts();
         return String.format("Jobs: %d/%d | HIGH:%d NORMAL:%d LOW:%d",
@@ -74,34 +91,32 @@ public class PrintJobQueue {
     }
 
     public double getAverageWaitingTime() {
-        if (isEmpty()) return 0;
-        LocalDateTime now = LocalDateTime.now();
-        long totalMinutes = 0;
-        for (int i = 0; i < size; i++) {
-            totalMinutes += java.time.Duration.between(jobs[i].getSubmissionTime(), now).toMinutes();
+        if (historySize == 0) return 0;
+        double totalMinutes = 0;
+        for (int i = 0; i < historySize; i++) {
+            PrintJob job = historyJobs[i];
+            if (job.getSubmissionTime() != null && job.getDequeueTime() != null) {
+                long seconds = Duration.between(job.getSubmissionTime(), job.getDequeueTime()).toSeconds();
+                totalMinutes += seconds;
+            }
         }
-        return (double) totalMinutes / size;
+        return totalMinutes / historySize;
     }
 
     public int getTodayServedCount() { return servedToday; }
 
     public int getHealthScore() {
         int score = 100;
-        double capacity = getCapacityPercentage();
         double waitTime = getAverageWaitingTime();
 
-        if (capacity > 90) score -= 30;
-        else if (capacity > 70) score -= 15;
-
-        if (waitTime > 60) score -= 25;
-        else if (waitTime > 30) score -= 10;
-
-        double[] dist = getPriorityDistribution();
-        if (dist[0] > 60) score -= 15; // too many HIGH priority
-
-        return Math.max(0, score);
+        if (waitTime < 10) {
+            return 100; // Excellent (80-100 range)
+        } else if (waitTime < 20) {
+            return 70;  // Good (60-79 range)
+        } else {
+            return 40;  // Needs Attention (0-59 range)
+        }
     }
-
     private int[] getPriorityCounts() {
         int[] counts = {0, 0, 0}; // HIGH, NORMAL, LOW
         for (int i = 0; i < size; i++) {

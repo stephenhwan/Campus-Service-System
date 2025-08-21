@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.greenwich.university</groupId>
         <artifactId>university-system</artifactId>
@@ -11,10 +13,33 @@
 
     <artifactId>api</artifactId>
     <packaging>jar</packaging>
-    <properties>
-        <maven.compiler.source>24</maven.compiler.source>
-        <maven.compiler.target>24</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
+    <dependencies>
+        <!-- Dependency to CourseRegistration module -->
+        <dependency>
+            <groupId>com.greenwich.university</groupId>
+            <artifactId>CourseRegistration</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.greenwich.university</groupId>
+            <artifactId>DigitalLibrarySystem</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.greenwich.university</groupId>
+            <artifactId>LostAndFoundTracker</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.greenwich.university</groupId>
+            <artifactId>RoomBookingSystem</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.greenwich.university</groupId>
+            <artifactId>print-job-manager</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
 </project>

@@ -7,7 +7,7 @@ public class PrintJobService {
     private PrintJobQueue queue;
 
     public PrintJobService() {
-        this.queue = new PrintJobQueue(100);
+        this.queue = new PrintJobQueue(5);
     }
 
     public String submitJob(String fileName, int pages, String priority) {

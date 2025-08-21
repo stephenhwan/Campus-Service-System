@@ -18,12 +18,9 @@ public class PrintJobManager {
         System.out.println("       PRINT JOB MANAGER SYSTEM");
         System.out.println("=".repeat(45));
 
-        // Quick stats
         System.out.println("📊 " + service.getBasicStats());
-        displayCapacityBar();
-
         if (!service.isEmpty()) {
-            System.out.println("⭐ Next: " + service.getNextJob().toString());
+            System.out.println("⭐ Next: " + service.getNextJob());
         } else {
             System.out.println("📭 No jobs in queue");
         }
@@ -40,12 +37,6 @@ public class PrintJobManager {
         System.out.print("Select option (1-7): ");
     }
 
-    private void displayCapacityBar() {
-        double pct = service.getCapacityPercentage();
-        String bar = createProgressBar(pct, 20);
-        String status = pct > 80 ? "🔴" : pct > 60 ? "🟡" : "🟢";
-        System.out.printf("💾 Capacity: %s %s %.1f%%\n", status, bar, pct);
-    }
 
     private String createProgressBar(double pct, int width) {
         int filled = (int) (pct * width / 100);
@@ -169,15 +160,10 @@ public class PrintJobManager {
         System.out.printf("🟡 NORMAL: %s %.1f%%\n", createProgressBar(dist[1], 20), dist[1]);
         System.out.printf("🟢 LOW   : %s %.1f%%\n", createProgressBar(dist[2], 20), dist[2]);
 
-        System.out.println("\n⏰ TIME STATS");
-        System.out.println("-".repeat(45));
-        System.out.printf("Today served: %d jobs\n", service.getTodayServedCount());
-        System.out.printf("Avg wait time: %.1f minutes\n", service.getAverageWaitingTime());
-
         if (!service.isEmpty()) {
             System.out.println("\n⏭️ NEXT JOB");
             System.out.println("-".repeat(45));
-            System.out.println(service.getNextJob().toString());
+            System.out.println(service.getNextJob());
         }
     }
 
@@ -188,18 +174,9 @@ public class PrintJobManager {
         String healthColor = health >= 80 ? "🟢" : health >= 60 ? "🟡" : "🔴";
         String healthBar = createProgressBar(health, 25);
         String healthStatus = health >= 80 ? "Excellent" : health >= 60 ? "Good" : "Needs Attention";
-
         System.out.printf("🏥 Health: %s %s %d/100 (%s)\n", healthColor, healthBar, health, healthStatus);
-
-        // Quick indicators
-        double capacityPct = service.getCapacityPercentage();
-        String capacityStatus = capacityPct > 80 ? "🔴 High" : capacityPct > 60 ? "🟡 Medium" : "🟢 Low";
-        System.out.printf("💾 Capacity: %.1f%% %s\n", capacityPct, capacityStatus);
-
         double waitTime = service.getAverageWaitingTime();
-        String waitStatus = waitTime > 20 ? "🔴 Long" : waitTime > 10 ? "🟡 Medium" : "🟢 Good";
-        System.out.printf("⏱️ Wait Time: %.1f min %s\n", waitTime, waitStatus);
-
+        System.out.printf("⏱️ Wait Time: %.1f second \n", waitTime);
         System.out.printf("📊 Queue Size: %d jobs\n", service.getAllJobs().length);
     }
     public void run() {
@@ -229,17 +206,15 @@ public class PrintJobManager {
                         break;
                     case 6:
                         displayHealthMonitor();
+                        break;
                     case 7:
                         System.out.println("👋 Thank you for using Print Job Manager System!");
                         System.out.println("Goodbye!");
-                        scanner.close();
                         return;
                     default:
-                        System.out.println("❌ Invalid option! Please select 1-6.");
-                }
+                        System.out.println("❌ Invalid option! Please select 1-7.");
 
-                System.out.println("\nPress Enter to continue...");
-                scanner.nextLine();
+                }
 
             } catch (NumberFormatException e) {
                 System.out.println("❌ Please enter a valid number!");
