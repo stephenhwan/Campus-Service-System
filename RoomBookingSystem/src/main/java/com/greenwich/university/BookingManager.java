@@ -1,3 +1,4 @@
+package com.greenwich.university;
 
 // Import classes to represent dates and times
 import java.time.LocalDate;
